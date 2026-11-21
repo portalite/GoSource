@@ -15,7 +15,11 @@ public class MainActivity extends Activity {
     int bg = Color.rgb(12, 17, 30);
     int panel = Color.rgb(25, 33, 50);
     int blue = Color.rgb(80, 130, 255);
+
     EditText search;
+    LinearLayout root;
+    TextView results;
+    Button research;
 
     int dp(int value) {
         return (int) (value * getResources()
@@ -45,11 +49,11 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(bg);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(bg);
 
-        LinearLayout root = new LinearLayout(this);
+        root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(22), dp(35), dp(22), dp(25));
+        root.setBackgroundColor(bg);
 
         scroll.addView(root);
 
@@ -61,12 +65,7 @@ public class MainActivity extends Activity {
             "BİLGİNİN KAYNAĞINA ULAŞ",
             11, Color.LTGRAY
         );
-        subtitle.setLetterSpacing(0.15f);
-
-        LinearLayout.LayoutParams subParams =
-            new LinearLayout.LayoutParams(-2, -2);
-        subParams.topMargin = dp(5);
-        root.addView(subtitle, subParams);
+        root.addView(subtitle);
 
         TextView heading = text(
             "Bugün neyi araştırmak istiyorsun?",
@@ -74,20 +73,20 @@ public class MainActivity extends Activity {
         );
         heading.setTypeface(null, Typeface.BOLD);
 
-        LinearLayout.LayoutParams headParams =
+        LinearLayout.LayoutParams hp =
             new LinearLayout.LayoutParams(-1, -2);
-        headParams.topMargin = dp(55);
-        root.addView(heading, headParams);
+        hp.topMargin = dp(55);
+        root.addView(heading, hp);
 
         TextView info = text(
-            "Konunu yaz. GoSource senin için güvenilir kaynaklar bulsun.",
+            "Konunu yaz. GoSource kaynakları senin için incelesin.",
             14, Color.LTGRAY
         );
 
-        LinearLayout.LayoutParams infoParams =
+        LinearLayout.LayoutParams ip =
             new LinearLayout.LayoutParams(-1, -2);
-        infoParams.topMargin = dp(10);
-        root.addView(info, infoParams);
+        ip.topMargin = dp(10);
+        root.addView(info, ip);
 
         search = new EditText(this);
         search.setSingleLine(false);
@@ -99,12 +98,12 @@ public class MainActivity extends Activity {
         search.setPadding(dp(16), dp(15), dp(16), dp(15));
         search.setBackground(shape(panel, 16));
 
-        LinearLayout.LayoutParams searchParams =
+        LinearLayout.LayoutParams sp =
             new LinearLayout.LayoutParams(-1, -2);
-        searchParams.topMargin = dp(25);
-        root.addView(search, searchParams);
+        sp.topMargin = dp(25);
+        root.addView(search, sp);
 
-        Button research = new Button(this);
+        research = new Button(this);
         research.setText("ARAŞTIRMAYI BAŞLAT");
         research.setTextColor(Color.WHITE);
         research.setTextSize(14);
@@ -112,49 +111,70 @@ public class MainActivity extends Activity {
         research.setAllCaps(false);
         research.setBackground(shape(blue, 14));
 
-        LinearLayout.LayoutParams buttonParams =
+        LinearLayout.LayoutParams bp =
             new LinearLayout.LayoutParams(-1, dp(54));
-        buttonParams.topMargin = dp(15);
-        root.addView(research, buttonParams);
+        bp.topMargin = dp(15);
+        root.addView(research, bp);
 
-        research.setOnClickListener(v -> {
-            String topic = search.getText().toString().trim();
-
-            if (topic.isEmpty()) {
-                Toast.makeText(this,
-                    "Önce bir konu yaz.",
-                    Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this,
-                    "Araştırma motoru hazırlanıyor.",
-                    Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        TextView recent = text(
-            "ARAŞTIRMA MERKEZİ",
+        TextView section = text(
+            "ARAŞTIRMA SONUÇLARI",
             13, Color.LTGRAY
         );
-        recent.setTypeface(null, Typeface.BOLD);
+        section.setTypeface(null, Typeface.BOLD);
 
-        LinearLayout.LayoutParams recentParams =
+        LinearLayout.LayoutParams rp =
             new LinearLayout.LayoutParams(-1, -2);
-        recentParams.topMargin = dp(45);
-        root.addView(recent, recentParams);
+        rp.topMargin = dp(35);
+        root.addView(section, rp);
 
-        TextView empty = text(
-            "Henüz araştırma yok.\nİlk araştırmanı başlattığında burada görünecek.",
-            14, Color.GRAY
+        results = text(
+            "Henüz araştırma yapılmadı.",
+            14, Color.WHITE
         );
-        empty.setGravity(Gravity.CENTER);
-        empty.setPadding(dp(15), dp(30), dp(15), dp(30));
-        empty.setBackground(shape(panel, 16));
+        results.setPadding(dp(16), dp(18), dp(16), dp(18));
+        results.setBackground(shape(panel, 16));
 
-        LinearLayout.LayoutParams emptyParams =
+        LinearLayout.LayoutParams resultParams =
             new LinearLayout.LayoutParams(-1, -2);
-        emptyParams.topMargin = dp(15);
-        root.addView(empty, emptyParams);
+        resultParams.topMargin = dp(15);
+        root.addView(results, resultParams);
+
+        research.setOnClickListener(v -> startResearch());
 
         setContentView(scroll);
+    }
+
+    void startResearch() {
+        String topic = search.getText().toString().trim();
+
+        if (topic.isEmpty()) {
+            Toast.makeText(this,
+                "Önce bir konu yaz.",
+                Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        research.setEnabled(false);
+        research.setText("KAYNAKLAR ARANIYOR...");
+        results.setText("GoSource kaynakları arıyor ve okuyor...");
+
+        ResearchEngine.search(topic,
+            new ResearchEngine.Listener() {
+
+                @Override
+                public void onResult(String result) {
+                    results.setText(result);
+                    research.setEnabled(true);
+                    research.setText("YENİDEN ARAŞTIR");
+                }
+
+                @Override
+                public void onError(String error) {
+                    results.setText(error);
+                    research.setEnabled(true);
+                    research.setText("TEKRAR DENE");
+                }
+            }
+        );
     }
 }
